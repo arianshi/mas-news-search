@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+news_cache.json
+.env

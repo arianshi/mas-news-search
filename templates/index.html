@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MAS News Search</title>
+  <style>
+    :root {
+      --navy:   #020f50;
+      --gold:   #a78337;
+      --gold-lt:#c9a54e;
+      --bg:     #f0f2f7;
+      --surface:#ffffff;
+      --border: #dde3ef;
+      --text:   #1a1a2e;
+      --text2:  #5a6272;
+      --text3:  #9aa0b0;
+      --accent: #0a3580;
+      --tag-bg: #eef1fb;
+      --shadow: 0 2px 8px rgba(0,0,0,0.07);
+      --shadow-hover: 0 6px 20px rgba(0,0,0,0.12);
+      --latest-border: var(--navy);
+      --cached-border: var(--gold);
+    }
+    [data-theme="dark"] {
+      --bg:     #0d1117;
+      --surface:#161b22;
+      --border: #30363d;
+      --text:   #e6edf3;
+      --text2:  #8b949e;
+      --text3:  #484f58;
+      --accent: #58a6ff;
+      --tag-bg: #1c2333;
+      --shadow: 0 2px 8px rgba(0,0,0,0.4);
+      --shadow-hover: 0 6px 20px rgba(0,0,0,0.5);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      background: var(--navy);
+      color: #fff;
+      padding: 0 28px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.35);
+    }
+    .header-logo {
+      background: var(--gold);
+      width: 36px; height: 36px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 12px; letter-spacing: 0.5px;
+      flex-shrink: 0; color: white;
+    }
+    .header-title { font-size: 17px; font-weight: 700; letter-spacing: 0.2px; }
+    .header-sub   { font-size: 11px; opacity: 0.55; margin-top: 1px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    .header-stat  { font-size: 12px; opacity: 0.6; }
+
+    /* dark mode toggle */
+    .toggle-wrap { display: flex; align-items: center; gap: 6px; }
+    .toggle-wrap span { font-size: 12px; opacity: 0.7; }
+    .toggle {
+      width: 40px; height: 22px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 11px;
+      position: relative; cursor: pointer;
+      border: none; outline: none;
+      transition: background 0.3s;
+    }
+    .toggle::after {
+      content: "";
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 16px; height: 16px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+    [data-theme="dark"] .toggle { background: var(--gold); }
+    [data-theme="dark"] .toggle::after { transform: translateX(18px); }
+
+    /* ── LAYOUT ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 0;
+      min-height: calc(100vh - 60px);
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 22px 16px;
+      position: sticky;
+      top: 60px;
+      height: calc(100vh - 60px);
+      overflow-y: auto;
+    }
+    .sidebar-section { margin-bottom: 28px; }
+    .sidebar-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text3);
+      margin-bottom: 10px;
+    }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text2);
+      transition: background 0.15s, color 0.15s;
+      user-select: none;
+      border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: var(--tag-bg); color: var(--text); }
+    .nav-item.active { background: var(--navy); color: white; font-weight: 600; }
+    [data-theme="dark"] .nav-item.active { background: var(--accent); }
+    .nav-item .icon { font-size: 15px; flex-shrink: 0; }
+    .nav-badge {
+      margin-left: auto;
+      background: var(--gold);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
+    .nav-item.active .nav-badge { background: rgba(255,255,255,0.25); }
+
+    .stat-card {
+      background: var(--tag-bg);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+    .stat-card .val { font-size: 22px; font-weight: 800; color: var(--navy); }
+    [data-theme="dark"] .stat-card .val { color: var(--accent); }
+    .stat-card .lbl { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+    /* ── MAIN ── */
+    .main { padding: 24px 28px; overflow-y: auto; }
+
+    /* Search bar */
+    .search-row {
+      display: flex; gap: 10px; margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+    .search-input-wrap {
+      flex: 1; min-width: 200px;
+      position: relative;
+    }
+    .search-input-wrap .icon {
+      position: absolute; left: 12px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 15px; pointer-events: none;
+    }
+    .search-input {
+      width: 100%;
+      padding: 10px 14px 10px 36px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      background: var(--surface);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: var(--navy); }
+    [data-theme="dark"] .search-input:focus { border-color: var(--accent); }
+
+    .btn {
+      padding: 10px 18px;
+      border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn:hover  { opacity: 0.88; }
+    .btn:active { transform: scale(0.97); }
+    .btn-navy   { background: var(--navy); color: white; }
+    .btn-gold   { background: var(--gold); color: white; }
+    .btn-outline {
+      background: var(--surface);
+      color: var(--text2);
+      border: 2px solid var(--border);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex; gap: 4px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0;
+    }
+    .tab {
+      padding: 9px 18px;
+      border: none; background: none;
+      font-size: 14px; font-weight: 600;
+      color: var(--text2);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--navy); border-bottom-color: var(--navy); }
+    [data-theme="dark"] .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-count {
+      font-size: 11px; font-weight: 700;
+      background: var(--tag-bg);
+      padding: 2px 6px; border-radius: 8px;
+      margin-left: 6px;
+    }
+
+    /* Section header */
+    .section-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-head h2 { font-size: 14px; color: var(--text2); font-weight: 500; }
+
+    /* ── CARDS ── */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 14px;
+    }
+
+    .news-card {
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 16px 18px;
+      border-left: 4px solid var(--latest-border);
+      box-shadow: var(--shadow);
+      transition: box-shadow 0.2s, transform 0.2s;
+      cursor: pointer;
+    }
+    .news-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+    .news-card.cached { border-left-color: var(--cached-border); }
+
+    .card-source {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--text3); margin-bottom: 7px;
+    }
+    .card-title {
+      font-size: 14px; font-weight: 600;
+      color: var(--text); line-height: 1.45;
+      margin-bottom: 10px;
+    }
+    .card-title a { color: inherit; text-decoration: none; }
+    .card-title a:hover { color: var(--navy); }
+    [data-theme="dark"] .card-title a:hover { color: var(--accent); }
+
+    mark { background: #fff3a8; color: inherit; border-radius: 2px; padding: 0 2px; }
+    [data-theme="dark"] mark { background: #5a4a00; }
+
+    .card-footer {
+      display: flex; align-items: center; gap: 8px;
+      flex-wrap: wrap;
+    }
+    .card-date { font-size: 11px; color: var(--text3); }
+    .card-tag {
+      font-size: 10px; font-weight: 600;
+      background: var(--tag-bg); color: var(--text2);
+      padding: 2px 8px; border-radius: 10px;
+    }
+
+    /* List style for cached */
+    .list-card {
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+      border-left: 4px solid var(--cached-border);
+      box-shadow: var(--shadow);
+      display: flex; align-items: flex-start; gap: 14px;
+      transition: box-shadow 0.2s;
+    }
+    .list-card:hover { box-shadow: var(--shadow-hover); }
+    .list-num {
+      font-size: 12px; font-weight: 700;
+      color: var(--text3); flex-shrink: 0;
+      padding-top: 2px; min-width: 22px;
+    }
+    .list-body { flex: 1; }
+
+    /* Status / alerts */
+    .alert {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; border-radius: 8px;
+      font-size: 13px; margin-bottom: 16px;
+    }
+    .alert-warn { background: #fff8e1; color: #856404; border: 1px solid #ffd54f; }
+    .alert-err  { background: #fde8e8; color: #c0392b; border: 1px solid #f5a0a0; }
+    .alert-ok   { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+    [data-theme="dark"] .alert-warn { background: #2a2000; color: #ffc107; border-color: #6e4e00; }
+    [data-theme="dark"] .alert-err  { background: #2a0000; color: #f48771; border-color: #6e0000; }
+    [data-theme="dark"] .alert-ok   { background: #002a00; color: #69f0ae; border-color: #006e00; }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle; margin-right: 4px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Empty state */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text3);
+    }
+    .empty .big { font-size: 44px; margin-bottom: 14px; }
+    .empty p    { font-size: 14px; line-height: 1.6; }
+
+    /* Loading skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, var(--tag-bg) 25%, var(--border) 50%, var(--tag-bg) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.3s infinite;
+      border-radius: 6px; height: 14px; margin-bottom: 8px;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    .skeleton-card {
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #1a1a2e; color: white;
+      padding: 11px 18px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.3);
+      transform: translateY(80px); opacity: 0;
+      transition: all 0.3s ease; z-index: 999;
+      max-width: 320px;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.err  { background: #c0392b; }
+    .toast.ok   { background: #2e7d32; }
+
+    @media (max-width: 680px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .main { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo">MAS</div>
+  <div>
+    <div class="header-title">MAS News Search</div>
+    <div class="header-sub">Monetary Authority of Singapore</div>
+  </div>
+  <div class="header-right">
+    <span class="header-stat" id="hdr-updated"></span>
+    <div class="toggle-wrap">
+      <span>🌙</span>
+      <button class="toggle" id="theme-btn" title="Toggle dark mode" aria-label="Toggle dark mode"></button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Browse</div>
+      <button class="nav-item active" data-tab="latest" onclick="switchTab('latest', this)">
+        <span class="icon">📡</span> Latest News
+        <span class="nav-badge" id="badge-latest">–</span>
+      </button>
+      <button class="nav-item" data-tab="cached" onclick="switchTab('cached', this)">
+        <span class="icon">🗂</span> MAS Archive
+        <span class="nav-badge" id="badge-cached">–</span>
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Filter by Category</div>
+      <button class="nav-item active-filter" data-cat="" onclick="setCategory('', this)">
+        <span class="icon">🌐</span> All
+      </button>
+      <button class="nav-item" data-cat="media-releases" onclick="setCategory('media-releases', this)">
+        <span class="icon">📢</span> Media Releases
+      </button>
+      <button class="nav-item" data-cat="speeches" onclick="setCategory('speeches', this)">
+        <span class="icon">🎙</span> Speeches
+      </button>
+      <button class="nav-item" data-cat="monetary-policy" onclick="setCategory('monetary-policy', this)">
+        <span class="icon">💹</span> Monetary Policy
+      </button>
+      <button class="nav-item" data-cat="consultations" onclick="setCategory('consultations', this)">
+        <span class="icon">📋</span> Consultations
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Stats</div>
+      <div class="stat-card">
+        <div class="val" id="stat-latest">–</div>
+        <div class="lbl">Live articles today</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" id="stat-cached">–</div>
+        <div class="lbl">Archived articles</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- Search + actions -->
+    <div class="search-row">
+      <div class="search-input-wrap">
+        <span class="icon">🔍</span>
+        <input class="search-input" id="q" type="text"
+          placeholder="Search news… e.g. interest rate, fintech, SGD" />
+      </div>
+      <button class="btn btn-gold" id="fetch-btn" onclick="doFetch()">
+        Fetch from MAS
+      </button>
+      <button class="btn btn-outline" onclick="loadLatest(true)">↺ Refresh</button>
+    </div>
+
+    <div id="alert-area"></div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" id="tab-latest" onclick="switchTab('latest')">
+        📡 Latest News <span class="tab-count" id="tc-latest">–</span>
+      </button>
+      <button class="tab" id="tab-cached" onclick="switchTab('cached')">
+        🗂 MAS Archive <span class="tab-count" id="tc-cached">–</span>
+      </button>
+    </div>
+
+    <!-- Latest panel -->
+    <div id="panel-latest">
+      <div class="section-head">
+        <h2 id="latest-head">Loading latest MAS news…</h2>
+      </div>
+      <div class="grid-2" id="latest-grid">
+        ${skeletons(6)}
+      </div>
+    </div>
+
+    <!-- Cached panel -->
+    <div id="panel-cached" style="display:none">
+      <div class="section-head">
+        <h2 id="cached-head">Archived articles from MAS website</h2>
+      </div>
+      <div id="cached-list"></div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  /* ── State ── */
+  let latestArticles = [];
+  let cachedArticles = [];
+  let currentTab = "latest";
+  let currentCat  = "";
+
+  /* ── Theme ── */
+  const themeBtn = document.getElementById("theme-btn");
+  themeBtn.addEventListener("click", () => {
+    const dark = document.documentElement.getAttribute("data-theme") === "dark";
+    document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+    localStorage.setItem("theme", dark ? "light" : "dark");
+  });
+  const saved = localStorage.getItem("theme");
+  if (saved) document.documentElement.setAttribute("data-theme", saved);
+
+  /* ── Tabs ── */
+  function switchTab(tab, sideBtn) {
+    currentTab = tab;
+    document.getElementById("panel-latest").style.display = tab === "latest" ? "" : "none";
+    document.getElementById("panel-cached").style.display = tab === "cached"  ? "" : "none";
+    document.getElementById("tab-latest").className = "tab" + (tab === "latest" ? " active" : "");
+    document.getElementById("tab-cached").className = "tab" + (tab === "cached"  ? " active" : "");
+    // sidebar
+    document.querySelectorAll(".nav-item[data-tab]").forEach(el =>
+      el.classList.toggle("active", el.dataset.tab === tab));
+    if (tab === "cached") renderCached();
+  }
+
+  /* ── Category filter ── */
+  function setCategory(cat, el) {
+    currentCat = cat;
+    document.querySelectorAll(".nav-item[data-cat]").forEach(b =>
+      b.classList.toggle("active-filter", b.dataset.cat === cat));
+    renderLatest();
+    renderCached();
+  }
+
+  /* ── Search ── */
+  document.getElementById("q").addEventListener("input", () => {
+    renderLatest();
+    renderCached();
+  });
+
+  function getQuery() {
+    return document.getElementById("q").value.trim().toLowerCase();
+  }
+
+  function highlight(text, q) {
+    if (!q) return escHtml(text);
+    const safe = escHtml(text);
+    const re = new RegExp(`(${escRe(q)})`, "gi");
+    return safe.replace(re, "<mark>$1</mark>");
+  }
+
+  function escHtml(t) {
+    return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+  function escRe(t) {
+    return t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  /* ── Latest News ── */
+  async function loadLatest(manual = false) {
+    const grid = document.getElementById("latest-grid");
+    if (!manual) grid.innerHTML = skeletonHTML(6);
+
+    try {
+      const res = await fetch("/api/latest");
+      const data = await res.json();
+      if (data.error) {
+        showAlert(`Could not load latest news: ${data.error}`, "err");
+        grid.innerHTML = emptyHTML("📡", "Could not reach Google News. Check your connection.");
+        return;
+      }
+      latestArticles = data.articles || [];
+      document.getElementById("stat-latest").textContent = latestArticles.length;
+      document.getElementById("badge-latest").textContent = latestArticles.length;
+      document.getElementById("tc-latest").textContent = latestArticles.length;
+      document.getElementById("hdr-updated").textContent =
+        `Updated ${new Date().toLocaleTimeString("en-SG", {hour:"2-digit", minute:"2-digit"})}`;
+      renderLatest();
+      if (manual) showToast(`Refreshed — ${latestArticles.length} articles`, "ok");
+    } catch (e) {
+      grid.innerHTML = emptyHTML("📡", "Failed to load latest news.");
+    }
+  }
+
+  function renderLatest() {
+    const q = getQuery();
+    let items = latestArticles;
+    if (q) items = items.filter(a => a.title.toLowerCase().includes(q) || (a.source||"").toLowerCase().includes(q));
+    if (currentCat) items = items.filter(a => (a.url||"").includes(currentCat) || (a.source||"").toLowerCase().includes(currentCat));
+
+    document.getElementById("latest-head").textContent =
+      q ? `${items.length} result(s) for "${q}"` : `${items.length} articles`;
+    document.getElementById("tc-latest").textContent = items.length;
+
+    if (!items.length) {
+      document.getElementById("latest-grid").innerHTML = emptyHTML("🔍", "No articles match your search.");
+      return;
+    }
+
+    document.getElementById("latest-grid").innerHTML = items.map(a => {
+      const dateStr = a.date ? new Date(a.date).toLocaleDateString("en-SG",
+        {day:"numeric", month:"short", year:"numeric"}) : "";
+      return `
+        <div class="news-card" onclick="window.open('${escHtml(a.url)}','_blank')">
+          ${a.source ? `<div class="card-source">${escHtml(a.source)}</div>` : ""}
+          <div class="card-title">${highlight(a.title, q)}</div>
+          <div class="card-footer">
+            ${dateStr ? `<span class="card-date">📅 ${dateStr}</span>` : ""}
+            <span class="card-tag">Latest</span>
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  /* ── Cached / Archive ── */
+  async function loadCache() {
+    try {
+      const res = await fetch("/api/articles");
+      const data = await res.json();
+      cachedArticles = data.articles || [];
+      document.getElementById("stat-cached").textContent = cachedArticles.length;
+      document.getElementById("badge-cached").textContent = cachedArticles.length || "0";
+      document.getElementById("tc-cached").textContent = cachedArticles.length;
+      if (data.fetched_at) {
+        document.getElementById("hdr-updated").textContent =
+          `Cache: ${new Date(data.fetched_at).toLocaleDateString("en-SG")}`;
+      }
+      if (!cachedArticles.length) {
+        showAlert('No archived articles yet. Click <strong>Fetch from MAS</strong> to load them (MAS website must be online).', "warn");
+      }
+      renderCached();
+    } catch (e) {
+      showAlert("Failed to load archive.", "err");
+    }
+  }
+
+  function renderCached() {
+    const q = getQuery();
+    let items = cachedArticles;
+    if (q) items = items.filter(a => a.title.toLowerCase().includes(q) || (a.category||"").toLowerCase().includes(q));
+    if (currentCat) items = items.filter(a => (a.category||"").toLowerCase().includes(currentCat) || (a.url||"").includes(currentCat));
+
+    document.getElementById("cached-head").textContent =
+      q ? `${items.length} result(s) for "${q}"` : `${items.length} archived articles`;
+    document.getElementById("tc-cached").textContent = items.length;
+
+    const container = document.getElementById("cached-list");
+    if (!items.length) {
+      container.innerHTML = emptyHTML("🗂", cachedArticles.length
+        ? "No articles match your search."
+        : "No archive yet. Fetch from MAS to populate.");
+      return;
+    }
+    container.innerHTML = items.map((a, i) => `
+      <div class="list-card" onclick="${a.url ? `window.open('${escHtml(a.url)}','_blank')` : ""}">
+        <div class="list-num">${i + 1}</div>
+        <div class="list-body">
+          <div class="card-title">${highlight(a.title, q)}</div>
+          <div class="card-footer">
+            ${a.date     ? `<span class="card-date">📅 ${escHtml(a.date)}</span>` : ""}
+            ${a.category ? `<span class="card-tag">${escHtml(a.category)}</span>` : ""}
+          </div>
+        </div>
+      </div>`).join("");
+  }
+
+  /* ── Fetch from MAS ── */
+  async function doFetch() {
+    const btn = document.getElementById("fetch-btn");
+    btn.innerHTML = `<span class="spinner"></span> Fetching…`;
+    btn.disabled = true;
+    const cat = currentCat || "all";
+    try {
+      const res = await fetch(`/api/fetch?category=${cat}`, { method: "POST" });
+      const data = await res.json();
+      if (data.error) {
+        showAlert(data.error, "err");
+        showToast(data.error, "err");
+      } else {
+        showToast(`Fetched ${data.count} articles from MAS`, "ok");
+        clearAlert();
+        await loadCache();
+        switchTab("cached");
+      }
+    } catch (e) {
+      showToast("Fetch failed — check your connection", "err");
+    }
+    btn.innerHTML = "Fetch from MAS";
+    btn.disabled = false;
+  }
+
+  /* ── Helpers ── */
+  function showAlert(msg, type) {
+    const icons = { warn: "⚠️", err: "❌", ok: "✅" };
+    document.getElementById("alert-area").innerHTML =
+      `<div class="alert alert-${type}">${icons[type]} ${msg}</div>`;
+  }
+  function clearAlert() {
+    document.getElementById("alert-area").innerHTML = "";
+  }
+
+  function showToast(msg, type = "") {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = `toast show ${type}`;
+    setTimeout(() => t.className = "toast", 3500);
+  }
+
+  function emptyHTML(icon, msg) {
+    return `<div class="empty" style="grid-column:1/-1"><div class="big">${icon}</div><p>${msg}</p></div>`;
+  }
+
+  function skeletonHTML(n) {
+    return Array.from({length: n}, () => `
+      <div class="skeleton-card">
+        <div class="skeleton" style="width:40%;height:10px;margin-bottom:10px"></div>
+        <div class="skeleton" style="width:95%"></div>
+        <div class="skeleton" style="width:80%"></div>
+        <div class="skeleton" style="width:60%;height:10px;margin-top:10px"></div>
+      </div>`).join("");
+  }
+
+  // Template literal workaround — skeletons() called inline above needs to be a string
+  function skeletons(n) { return skeletonHTML(n); }
+
+  /* ── Init ── */
+  loadLatest();
+  loadCache();
+</script>
+</body>
+</html>
